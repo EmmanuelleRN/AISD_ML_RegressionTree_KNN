@@ -1,0 +1,142 @@
+---
+title: "~"
+subtitle: " "
+date: " "
+output:
+  xaringan::moon_reader:
+    css: [default, my_css.css, metropolis-fonts]
+    lib_dir: libs
+    nature:
+      ratio: '16:9'
+      slideNumberFormat: '%current%'
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+class: class: center, middle
+
+
+<!-- css: [default, duke-blue, hygge-duke] -->
+
+```{r setup, echo=FALSE}
+options(htmltools.dir.version = FALSE)
+xaringanExtra::use_logo('www/channels4_profile-removebg-preview.png')
+```
+
+```{r include=FALSE}
+library(dplyr)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+```{css, echo = F}
+.regression table {
+  font-size: 12px;     
+}
+
+.dataTables_info{
+  font-size: 10px;
+}
+
+.dataTables_paginate{
+  font-size: 10px;
+}
+
+.dataTables_length{
+  font-size: 10px;
+}
+```
+
+
+# Machine Learning
+
+---
+
+# Machine Learning - Concepts
+
+- Machine Learning (ML) is a subset of Artificial Intelligence (AI)
+- Algorithms that can improve automatically through experience and by the use of data without being explicit programmed, reason why we say that the algorithms learn.
+- With ML algorithms we can build a model to make predictions or decisions.
+- Machine learning algorithms are used many different applications, for example:
+  - Medicine
+  - Email filtering
+  - Speech recognition
+  - Computer vision
+
+<center><img src="https://backend.mile.cloud/upload/module/3ab28920802a8e64b800fdd2d22e7940.png" height="200"></img></center>
+
+---
+
+class: center, middle
+background-image: url(www/machine-learning.png)
+background-size: contain
+
+---
+
+class: center, middle
+
+# Supervised Learning
+
+---
+
+# Supervised Learning
+
+.pull-left[
+**Supervised learning** is where you have input variables ($X$) and an output variable ($y$) and you use an algorithm to learn the mapping function from the input to the output.
+
+<center> y = f(X) </center>
+
+- It is the most common type of Machine Learning problem
+
+- It is called **supervised** because we have the label that tell us the correct information, and we are going to be corrected if we predict wrong.
+
+- Supervised learning can be grouped into two problems:
+  - **Regression:** The output variable is a real number, for example, weight
+  - **Classification:** The output variable is a category, for example, disease and no disease 
+]
+
+.pull-right[
+<img src="https://maplearn.readthedocs.io/en/latest/_images/classif_reg.png"></img>
+]
+
+---
+
+class: center, middle
+
+# Classification
+
+---
+
+# Classification
+
+**Classification** is a type of **supervised** learning where we categorise data into classes. There are many different algorithms that can help us solve this kind of problems.
+
+Classification requires a training dataset with many examples of inputs and outputs from which to learn. It can be categorised in two types of problems:
+  - **Binary classification:** The outcome has only **two** labels, for example, disease and not disease. 
+    - Some popular algorithms are: Logistic Regression, Decision Tree, K-Nearest Neighbour (KNN)
+  - **Multi-label classification:** The outcome has multiple labels, for example, dog, cat, bird and other.
+    - Some popular algorithms: KNN, Decision Tree, Random Forest, Naive Bayes
+
+To evaluate the model performance we can make use of ROC, confusion matrix, etc. We need to be aware of **class imbalance** problems.
+
+---
+
+class: center, middle
+
+# Decision Tree (CART)
+
+---
+
+# Decision Tree
+
+There are various algorithms that can grow a tree. 
+- Differences: 
+  - Possible structure of the tree (e.g. number of splits per node)
+  - Criteria how to find the splits
+  - Criteria to stop splitting 
+  - How to estimate the simple models within the leaf nodes. 
+  
+The **Classification and Regression Trees (CART)** algorithm is probably the most popular algorithm for tree induction. 
+  - We will focus on CART, but the interpretation is similar for most other tree types.
+  
+> Note: Decision Trees can be used for both Regression and Classification problems

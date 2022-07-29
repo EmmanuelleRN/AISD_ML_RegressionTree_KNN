@@ -1,0 +1,50 @@
+.remark-slide {
+  background-image: url("bback.png");
+  background-size: cover;
+}
+
+.title-slide {
+  background-image: url("bback.png");
+  background-size: cover;
+  font-family: Arial;
+  font-style: normal;
+  font-weight: bold;
+  font-stretch: normal;
+  font-size: 36pt;
+  fill: rgb(0, 176, 213);
+  fill="#00B0D5";
+  margin-block-start: 0.em;
+  margin-block-end: 0.67em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+#-{
+  margin-inline-start: -1000px;
+  margin-inline-end: 3000px;
+}
+
+
+.inverse h1 {
+    color: #00B0D5;
+    margin-inline-start: -100px;
+    margin-inline-end: 300px;
+}
+
+.inverse h2, .inverse h3{
+    color: #000000;
+    font-size: 18pt;
+    margin-inline-start: -100px;
+    margin-inline-end: 300px;
+}
+
+h1, h2, h3 {
+  color: #00B0D5;
+  line-height: 1em;
+	text-shadow: 0 0 0;
+}
+
+.title-slide path{
+  fill:url(test.png)
+  d: path("M 0 488.06 L 960 488.06 L 960 549.11 L 0 549.11 Z")
+}
