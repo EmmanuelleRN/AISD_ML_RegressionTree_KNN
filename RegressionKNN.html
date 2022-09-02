@@ -123,12 +123,456 @@ class: center, middle
 
 - Supervised learning can be grouped into two problems:
   - **Regression:** The output variable is a real number, for example, weight
-  - **Clustering:** The output variable is a category, for example, disease and no disease 
+  - **Classification:** The output variable is a category, for example, disease and no disease 
 ]
 
 .pull-right[
 &lt;img src="https://maplearn.readthedocs.io/en/latest/_images/classif_reg.png"&gt;&lt;/img&gt;
 ]
+
+---
+
+class: center, middle
+
+# Classification
+
+---
+
+# Classification
+
+**Classification** is a type of **supervised** learning where we categorise data into classes. There are many different algorithms that can help us solve this kind of problems.
+
+Classification requires a training dataset with many examples of inputs and outputs from which to learn. It can be categorised in two types of problems:
+  - **Binary classification:** The outcome has only **two** labels, for example, disease and not disease. 
+    - Some popular algorithms are: Logistic Regression, Decision Tree, K-Nearest Neighbour (KNN)
+  - **Multi-label classification:** The outcome has multiple labels, for example, dog, cat, bird and other.
+    - Some popular algorithms: KNN, Decision Tree, Random Forest, Naive Bayes
+
+To evaluate the model performance we can make use of ROC, confusion matrix, etc. We need to be aware of **class imbalance** problems.
+
+---
+
+class: center, middle
+
+# Decision Tree (CART)
+
+---
+
+# Decision Tree
+
+There are various algorithms that can grow a tree. 
+- Differences: 
+  - Possible structure of the tree (e.g. number of splits per node)
+  - Criteria how to find the splits
+  - Criteria to stop splitting 
+  - How to estimate the simple models within the leaf nodes. 
+  
+The **Classification and Regression Trees (CART)** algorithm is probably the most popular algorithm for tree induction. 
+  - We will focus on CART, but the interpretation is similar for most other tree types.
+  
+&gt; Note: Decision Trees can be used for both Regression and Classification problems
+
+---
+
+# Theory
+
+The processes behind *classification* and *regression* in tree analysis is very similar, but we need to first distinguish the two.
+
+- **Classification:** For a response variable which has *classes*, we want to organize the dataset into groups by the response variable. 
+- **Regression:** When our response variable is instead numeric or continuous we
+wish to use the data to predict the outcome, and will use regression trees in this situation. 
+
+Essentially, a classification tree splits the data based on homogeneity by categorizing the data based on similarity, filtering out the "noise" and making the data "pure", hence the concept of **purity criterion**. 
+
+When the response variable does not have classes, a regression model is fit to each of the independent variables, isolating these variables as nodes where their inclusion decreases error. 
+
+&lt;!-- --- --&gt;
+
+&lt;!-- # Theory - Regression --&gt;
+
+&lt;!-- .pull-left[ --&gt;
+&lt;!-- In traditional regression models, we have a single model to represent the entire data set. CART is an alternative approach to this, where the data is --&gt;
+&lt;!-- partitioned into smaller sections where variable interactions are more clear. --&gt;
+
+&lt;!-- CART uses this recursive partitioning to create a tree where each node represents a cell of the partition. Each cell has attached to it a simplified model which is applied to that cell only, and as we move down the nodes, or leaves, of the tree we are conditioning on a certain variable.  --&gt;
+
+&lt;!-- In the figure, A, B, and C are each terminal nodes, implying that after this split, further splitting does not explain enough of the variance to be relevant in describing Y. --&gt;
+&lt;!-- ] --&gt;
+
+&lt;!-- .pull-right[ --&gt;
+&lt;!-- &lt;img src="www/tree.PNG" height="200"&gt;&lt;/img&gt; --&gt;
+&lt;!-- ] --&gt;
+
+&lt;!-- --- --&gt;
+
+---
+
+# Theory
+
+CART takes a feature and determines which cut-off point minimizes:
+- The variance of `\(Y\)` for a regression task 
+  -  The variance tells us how much the y values in a node are spread around their mean value
+- The Gini index of the class distribution of `\(Y\)` for classification tasks
+  - The Gini index tells us how "impure" a node is, e.g. if all classes have the same frequency, the node is impure, if only one class is present, it is maximally pure. 
+
+Variance and Gini index are minimized when the data points in the nodes have very similar values for `\(Y\)`. As a consequence, the best cut-off point makes the two resulting subsets as different as possible with respect to the target outcome. 
+
+For categorical features, the algorithm tries to create subsets by trying different groupings of categories. After the best cutoff per feature has been determined, the algorithm selects the feature for splitting that would result in the best partition in terms of the variance or Gini index and adds this split to the tree. The algorithm continues this search-and-split recursively in both new nodes until a stop criterion is reached. Possible criteria are: A minimum number of instances that have to be in a node before the split, or the minimum number of instances that have to be in a terminal node.
+
+---
+
+# Interpretation
+
+.pull-left[
+
+Let's first define some keys terms:
+- **Root node:** The base of the decision tree.
+- **Splitting:** The process of dividing a node into multiple sub-nodes.
+- **Decision node:** When a sub-node is further split into additional sub-nodes.
+- **Leaf node:** When a sub-node does not further split into additional sub-nodes; represents possible outcomes.
+- **Pruning:** The process of removing sub-nodes of a decision tree.
+- **Branch:** A subsection of the decision tree consisting of multiple nodes.
+
+Starting from the root node, you go to the next nodes and the edges tell you which subsets you are looking at. Once you reach the leaf node, the node tells you the predicted outcome. All the edges are connected by 'AND', so we are conditioning on the variable.
+
+]
+
+.pull-right[
+
+![tree](www/tree-graphic.webp)
+For example, if you are with friends *AND* it is windy, *THEN* it is above par.
+
+]
+---
+
+# In R
+
+There are two main libraries that implement the CART model:
+- tree
+  - Command: *tree(formula, data, weights, subset, na.action = na.pass, control = tree.control(nobs, ...), method = "recursive.partition", split = c("deviance", "gini"), model = FALSE, x = FALSE, y = TRUE, wts = TRUE, ...)*
+      - **formula** defines if it is classification or regression. It should be entered on the format `\(Y \sim x_1 + ... + x_n\)`
+      - **data**: Dataset 
+- rpart
+  - Command: *rpart(formula, data, weights, subset, na.action = na.rpart, method, model = FALSE, x = FALSE, y = TRUE, parms, control, cost, ...)*
+      - **method** defines if it is a classification or regression
+
+In summary, if using `\(tree\)` for:
+ - **Classification**: `\(\text{tree}(\text{factor}(Y) \sim \sum x, \text{data})\)`
+ - **Regression**: `\(\text{tree}(Y \sim \sum x, \text{data})\)`
+
+If using `\(rpart\)`:
+- **Classification**: `\(\text{tree}(Y \sim \sum x, \text{data}, method = 'class')\)`
+- **Regression**: `\(\text{tree}(Y \sim \sum x, \text{data}, method = 'anova')\)`
+
+---
+
+# Example
+
+We will use a **classification** dataset for the example. The dataset will be the `Pima Indians Diabetes Database` from `mlbench`.
+
+
+```r
+library(rsample)     # data splitting 
+library(dplyr)       # data wrangling
+library(rpart)       # performing regression trees
+library(rpart.plot)  # plotting regression trees
+library(mlbench)     # ML datasets
+
+# Pima Indians Diabetes Database
+data(PimaIndiansDiabetes)
+
+glimpse(PimaIndiansDiabetes)
+```
+
+```
+## Rows: 768
+## Columns: 9
+## $ pregnant &lt;dbl&gt; 6, 1, 8, 1, 0, 5, 3, 10, 2, 8, 4, 10, 10, 1, 5, 7, 0, 7, 1, 1…
+## $ glucose  &lt;dbl&gt; 148, 85, 183, 89, 137, 116, 78, 115, 197, 125, 110, 168, 139,…
+## $ pressure &lt;dbl&gt; 72, 66, 64, 66, 40, 74, 50, 0, 70, 96, 92, 74, 80, 60, 72, 0,…
+## $ triceps  &lt;dbl&gt; 35, 29, 0, 23, 35, 0, 32, 0, 45, 0, 0, 0, 0, 23, 19, 0, 47, 0…
+## $ insulin  &lt;dbl&gt; 0, 0, 0, 94, 168, 0, 88, 0, 543, 0, 0, 0, 0, 846, 175, 0, 230…
+## $ mass     &lt;dbl&gt; 33.6, 26.6, 23.3, 28.1, 43.1, 25.6, 31.0, 35.3, 30.5, 0.0, 37…
+## $ pedigree &lt;dbl&gt; 0.627, 0.351, 0.672, 0.167, 2.288, 0.201, 0.248, 0.134, 0.158…
+## $ age      &lt;dbl&gt; 50, 31, 32, 21, 33, 30, 26, 29, 53, 54, 30, 34, 57, 59, 51, 3…
+## $ diabetes &lt;fct&gt; pos, neg, pos, neg, pos, neg, pos, neg, pos, pos, neg, pos, n…
+```
+
+
+---
+
+# Example
+
+First, we will split the data into a training and test set
+
+
+```r
+# Create training (70%) and test (30%) sets 
+# Use set.seed for reproducibility
+set.seed(123)
+pima_split &lt;- initial_split(PimaIndiansDiabetes, prop = .7)
+pima_train &lt;- training(pima_split)
+pima_test  &lt;- testing(pima_split)
+```
+
+---
+
+# Example - Implementation
+
+I'll fit the example using `rpart` and plot the tree using `rpart.plot`
+
+
+```r
+tree &lt;- rpart(formula = diabetes ~ .,
+              data = pima_train,
+              method = 'class')
+
+tree
+```
+
+```
+## n= 537 
+## 
+## node), split, n, loss, yval, (yprob)
+##       * denotes terminal node
+## 
+##    1) root 537 187 neg (0.65176909 0.34823091)  
+##      2) glucose&lt; 143.5 414  96 neg (0.76811594 0.23188406)  
+##        4) age&lt; 28.5 226  28 neg (0.87610619 0.12389381)  
+##          8) mass&lt; 29.95 107   2 neg (0.98130841 0.01869159) *
+##          9) mass&gt;=29.95 119  26 neg (0.78151261 0.21848739)  
+##           18) pressure&gt;=51 107  18 neg (0.83177570 0.16822430) *
+##           19) pressure&lt; 51 12   4 pos (0.33333333 0.66666667) *
+##        5) age&gt;=28.5 188  68 neg (0.63829787 0.36170213)  
+##         10) mass&lt; 27.05 43   4 neg (0.90697674 0.09302326) *
+##         11) mass&gt;=27.05 145  64 neg (0.55862069 0.44137931)  
+##           22) glucose&lt; 108.5 58  15 neg (0.74137931 0.25862069) *
+##           23) glucose&gt;=108.5 87  38 pos (0.43678161 0.56321839)  
+##             46) pedigree&lt; 0.7205 67  32 neg (0.52238806 0.47761194)  
+##               92) age&lt; 30.5 16   4 neg (0.75000000 0.25000000) *
+##               93) age&gt;=30.5 51  23 pos (0.45098039 0.54901961)  
+##                186) triceps&lt; 36.5 44  21 neg (0.52272727 0.47727273)  
+##                  372) age&gt;=44.5 14   4 neg (0.71428571 0.28571429) *
+##                  373) age&lt; 44.5 30  13 pos (0.43333333 0.56666667)  
+##                    746) age&lt; 41.5 22   9 neg (0.59090909 0.40909091)  
+##                     1492) pedigree&gt;=0.256 13   3 neg (0.76923077 0.23076923) *
+##                     1493) pedigree&lt; 0.256 9   3 pos (0.33333333 0.66666667) *
+##                    747) age&gt;=41.5 8   0 pos (0.00000000 1.00000000) *
+##                187) triceps&gt;=36.5 7   0 pos (0.00000000 1.00000000) *
+##             47) pedigree&gt;=0.7205 20   3 pos (0.15000000 0.85000000) *
+##      3) glucose&gt;=143.5 123  32 pos (0.26016260 0.73983740)  
+##        6) mass&lt; 29.85 22   9 neg (0.59090909 0.40909091) *
+##        7) mass&gt;=29.85 101  19 pos (0.18811881 0.81188119) *
+```
+
+---
+
+# Explaining the output
+
+The output explains the steps for the split. For example, 
+- We start with 537 observations at the root node (very beginning) 
+- The first variable we split on (the first variable that optimizes a reduction in the Gini index) is `glucose`. 
+- We can see that at the first node all observations with `glucose &lt; 143.5` go to the 2nd (`2)`) branch. 
+- The total number of observations that follow this branch (`414`), their probability of not having diabetes is `0.768` and we have `96` negatives. 
+  - If you look for the 3rd branch (`3)`) you will see that `123` observations with `glucose &gt;= 143.5` follow this branch and their probability of not having diabetes is 0.26. 
+- Basically, this is telling us the most important variable that has the largest reduction in Gini initially is `glucose` with the majority of people having lower glucose values resulting in not having diabetes.
+
+---
+
+# Example - Visualise Tree
+
+We can visualize our model with `rpart.plot` that has many plotting options. One thing you may notice is that this tree contains 13 internal nodes resulting in 14 terminal nodes. 
+
+
+```r
+rpart.plot(tree)
+```
+
+![](RegressionKNN_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+
+---
+
+# Explaining the Partitions
+
+You might have noticed that not all the variables were used to generate the plot. 
+
+Behind the scenes `rpart` is automatically applying a range of cost complexity to prune the tree. To compare the error for each value, rpart performs a 10-fold cross validation so that the error associated with a given value is computed on the hold-out validation data. 
+
+In this example we find diminishing returns after 14 terminal nodes as illustrated below. We could use a tree with 3 terminal nodes and reasonably expect to experience similar results within a small margin of error.
+
+
+```r
+plotcp(tree)
+```
+
+![](RegressionKNN_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+
+---
+
+# Pruning
+
+By default, `rpart` is performing some automated tuning, with an optimal subtree of 13 splits, 14 terminal nodes, and a cross-validated error of 0.7433. However, we can perform additional tuning to try improve model performance.
+
+
+```r
+tree$cptable
+```
+
+```
+##           CP nsplit rel error    xerror       xstd
+## 1 0.31550802      0 1.0000000 1.0000000 0.05903724
+## 2 0.02139037      1 0.6844920 0.6844920 0.05280048
+## 3 0.01960784      2 0.6631016 0.7326203 0.05402086
+## 4 0.01782531      7 0.5614973 0.7326203 0.05402086
+## 5 0.01604278     10 0.5080214 0.7058824 0.05335630
+## 6 0.01069519     11 0.4919786 0.7165775 0.05362609
+## 7 0.01000000     13 0.4705882 0.7433155 0.05427754
+```
+
+---
+
+# Tuning
+
+In addition to the cost complexity ($\alpha$ parameter), it is also common to tune:
+
+- **minsplit:** the minimum number of data points required to attempt a split before it is forced to create a terminal node. 
+- **maxdepth:** the maximum number of internal nodes between the root node and the terminal nodes. 
+
+
+
+```r
+tree_control &lt;- rpart(
+    formula = diabetes ~ .,
+    data    = pima_train,
+    method  = "class", 
+    control = list(minsplit = 10, maxdepth = 12, xval = 10)
+)
+
+tree_control$cptable
+```
+
+```
+##           CP nsplit rel error    xerror       xstd
+## 1 0.31550802      0 1.0000000 1.0000000 0.05903724
+## 2 0.02139037      1 0.6844920 0.7005348 0.05321939
+## 3 0.01960784      2 0.6631016 0.7272727 0.05389058
+## 4 0.01782531      7 0.5614973 0.7272727 0.05389058
+## 5 0.01604278     10 0.5080214 0.7112299 0.05349187
+## 6 0.01069519     11 0.4919786 0.7005348 0.05321939
+## 7 0.01000000     13 0.4705882 0.7165775 0.05362609
+```
+
+---
+
+# Tuning
+
+This approach requires you to manually assess multiple models. 
+
+We can perform a grid search to automatically search across a range of differently tuned models to identify the optimal hyerparameter setting.
+
+
+```r
+hyper_grid &lt;- expand.grid(
+  minsplit = seq(5, 20, 1),
+  maxdepth = seq(8, 15, 1)
+)
+
+# total number of combinations
+nrow(hyper_grid)
+```
+
+```
+## [1] 128
+```
+
+```r
+models &lt;- list()
+
+for (i in 1:nrow(hyper_grid)) {
+  # train a model and store in the list
+  models[[i]] &lt;- rpart(
+    formula = diabetes ~ .,
+    data    = pima_train,
+    method  = "class",
+    control = list(minsplit = hyper_grid$minsplit[i], maxdepth = hyper_grid$maxdepth[i])
+    )
+}
+```
+
+---
+
+# Tuning
+
+We can now create a function to extract the minimum error associated with the optimal cost complexity value for each model. 
+
+
+```r
+# function to get optimal cp
+get_cp &lt;- function(x) {
+  min    &lt;- which.min(x$cptable[, "xerror"])
+  cp &lt;- x$cptable[min, "CP"] 
+}
+
+# function to get minimum error
+get_min_error &lt;- function(x) {
+  min    &lt;- which.min(x$cptable[, "xerror"])
+  xerror &lt;- x$cptable[min, "xerror"] 
+}
+
+hyper_grid %&gt;%
+  mutate(
+    cp    = purrr::map_dbl(models, get_cp),
+    error = purrr::map_dbl(models, get_min_error)
+    ) %&gt;%
+  arrange(error) %&gt;%
+  top_n(-5, wt = error)
+```
+
+```
+##   minsplit maxdepth         cp     error
+## 1        8       13 0.01069519 0.6470588
+## 2       11       10 0.01604278 0.6577540
+## 3       13       15 0.01069519 0.6577540
+## 4        9        9 0.01069519 0.6631016
+## 5        6        8 0.01604278 0.6684492
+## 6       10       13 0.01000000 0.6684492
+## 7       17       15 0.01604278 0.6684492
+```
+
+---
+
+# Example - Applying best model and predict
+
+We can apply this final optimal model and predict on our test set. 
+
+
+```r
+optimal_tree &lt;- rpart(
+    formula = diabetes ~ .,
+    data    = pima_train,
+    method  = "class",
+    control = list(minsplit = 8, maxdepth = 13, cp = 0.01069519)
+    )
+
+pred &lt;- predict(optimal_tree, newdata = pima_test) %&gt;% as.data.frame() %&gt;%
+  mutate(class = as.factor(ifelse(neg &gt; pos, "neg", "pos")))
+performanceEstimation::classificationMetrics(pima_test$diabetes, pred$class, 
+                                             metrics = c("rec", "prec", "F", "acc"))
+```
+
+```
+##       rec      prec         F       acc 
+## 0.8733333 0.7359551 0.7987805 0.7142857
+```
+
+
+---
+
+# References
+
+Majid (2013)
+
+Breiman et al. (1984)
 ---
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
