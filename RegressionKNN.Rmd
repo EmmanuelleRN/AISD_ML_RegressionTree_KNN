@@ -427,6 +427,142 @@ performanceEstimation::classificationMetrics(pima_test$diabetes, pred$class,
                                              metrics = c("rec", "prec", "F", "acc"))
 ```
 
+---
+
+class: class: center, middle
+
+# KNN
+
+---
+
+# KNN
+
+The K-Nearest Neighbours (KNN) is a **supervised learning** algorithm that can be used for regression and classification tasks, but it is more comonly used for classification.
+- K represents the number of neighbours that will be used
+- It assumes that similar things will be close to each other and dissimilar things will be far from each other.
+- To understand the similarity between observations, we need to know the distance between them.
+  - There are different distance metrics that we can use depending on the problem we are solving.
+  
+When usign KNN we need to normalise our data, as variables we different scale might have a bigger impact simply because of the scale.
+  
+```{r, echo = FALSE, out.width = "300px"}
+knitr::include_graphics("www/knn.png")
+```  
+
+---
+
+# The KNN Algorithm
+
+1. Load the data
+2. Initialise K
+  2.a) K is a user defined choice
+3. For each observation in the data
+  3.a) Calculate the distance between the current observation and all the data points in the dataset
+  3.b) Sort the distances from smallest to largest
+  3.c) Pick the first K entries from the sorted collection
+4. If regression, return the mean of the K labels and if classification return the most common label
+
+# Choosing the right value for K
+
+If we pick the wrong K for the data, our prediction is going to be wrong. We need to run the algorithm for different K values to find the K that reduces the errors we encounter whilst maintaining a good performance for unseen data.
+
+---
+
+# Example - KNN
+
+We will continue to use the same diabetes dataset.
+
+We will be using the library `recipes` to create workflows to apply the normalisation step with the use of the functions `step_scale` and `step_center` and we will build the model using the `nearest_neighbor` function from parsnip with the engine `kknn`.
+
+```{r}
+library(recipes)
+library(workflows)
+
+diabetes_recipe <- recipes::recipe(diabetes ~ ., data = PimaIndiansDiabetes) |>
+  recipes::step_scale(recipes::all_predictors()) |>
+  recipes::step_center(recipes::all_predictors())
+
+diabetes_spec <- parsnip::nearest_neighbor(neighbors = parsnip::tune()) |>
+  parsnip::set_engine("kknn") |>
+  parsnip::set_mode("classification")
+```
+
+We can notice that for the number K of neighbours we passed the function `tune`, meaning that we are going to tune the value of K.
+---
+
+# Example - Train KNN
+
+To train the model we will use 5 fold cross validation. 
+
+```{r}
+diabetes_cv <- rsample::vfold_cv(pima_train, v = 5)
+
+diabetes_wkflw <- workflows::workflow() |>
+  workflows::add_recipe(diabetes_recipe) |>
+  workflows::add_model(diabetes_spec)
+
+diabetes_wkflw
+```
+
+---
+
+# Example - Train KNN
+
+Next, we run cross validation for a grid of neighbours ranging from 1 to 20.
+
+```{r}
+grid_vals <- tibble::tibble(neighbors = seq(from = 1, to = 20, by = 1))
+
+diabetes_results <- diabetes_wkflw |>
+  tune::tune_grid(resamples = diabetes_cv, grid = grid_vals) 
+
+diabetes_results |>
+  tune::collect_metrics() 
+```
+
+
+---
+
+# KNN - Run final model with tunned parameters
+
+We can finish the workflow by using the function `finalize_workflow` alongside the function `select_best` that selects the best parameter combination from the grid search.
+
+```{r}
+(diabetes_wkflw <- diabetes_wkflw |>
+  tune::finalize_workflow(diabetes_results |>
+                            tune::select_best(metric = "roc_auc")))
+```
+
+---
+
+# KNN - Evaluate the model on the test set
+
+So far we have:
+  - Defined our recipe
+  - Defined the model
+  - Tuned the model’s parameters
+  
+Now, we’re ready to fit the final model. All the steps are contained within the `workflow` object, so we can apply the `last_fit()` function to our workflow and our train/test split object. This will automatically train the model specified by the workflow using the training data, and produce evaluations based on the test set.
+
+```{r}
+diabetes_fit <- diabetes_wkflw |>
+  # fit on the training set and evaluate on test set
+  tune::last_fit(pima_split)
+
+diabetes_fit
+```
+
+---
+
+# KNN - Seeing the result of our model
+
+To see the performance of the test set, we can use again the function `collect_metrics()`
+
+```{r}
+diabetes_fit |>
+  tune::collect_metrics()
+```
+
 
 ---
 

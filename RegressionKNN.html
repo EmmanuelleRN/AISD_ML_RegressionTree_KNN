@@ -565,6 +565,220 @@ performanceEstimation::classificationMetrics(pima_test$diabetes, pred$class,
 ## 0.8733333 0.7359551 0.7987805 0.7142857
 ```
 
+---
+
+class: class: center, middle
+
+# KNN
+
+---
+
+# KNN
+
+The K-Nearest Neighbours (KNN) is a **supervised learning** algorithm that can be used for regression and classification tasks, but it is more comonly used for classification.
+- K represents the number of neighbours that will be used
+- It assumes that similar things will be close to each other and dissimilar things will be far from each other.
+- To understand the similarity between observations, we need to know the distance between them.
+  - There are different distance metrics that we can use depending on the problem we are solving.
+  
+When usign KNN we need to normalise our data, as variables we different scale might have a bigger impact simply because of the scale.
+  
+&lt;img src="www/knn.png" width="300px" /&gt;
+
+---
+
+# The KNN Algorithm
+
+1. Load the data
+2. Initialise K
+  2.a) K is a user defined choice
+3. For each observation in the data
+  3.a) Calculate the distance between the current observation and all the data points in the dataset
+  3.b) Sort the distances from smallest to largest
+  3.c) Pick the first K entries from the sorted collection
+4. If regression, return the mean of the K labels and if classification return the most common label
+
+# Choosing the right value for K
+
+If we pick the wrong K for the data, our prediction is going to be wrong. We need to run the algorithm for different K values to find the K that reduces the errors we encounter whilst maintaining a good performance for unseen data.
+
+---
+
+# Example - KNN
+
+We will continue to use the same diabetes dataset.
+
+We will be using the library `recipes` to create workflows to apply the normalisation step with the use of the functions `step_scale` and `step_center` and we will build the model using the `nearest_neighbor` function from parsnip with the engine `kknn`.
+
+
+```r
+library(recipes)
+library(workflows)
+
+diabetes_recipe &lt;- recipes::recipe(diabetes ~ ., data = PimaIndiansDiabetes) |&gt;
+  recipes::step_scale(recipes::all_predictors()) |&gt;
+  recipes::step_center(recipes::all_predictors())
+
+diabetes_spec &lt;- parsnip::nearest_neighbor(neighbors = parsnip::tune()) |&gt;
+  parsnip::set_engine("kknn") |&gt;
+  parsnip::set_mode("classification")
+```
+
+We can notice that for the number K of neighbours we passed the function `tune`, meaning that we are going to tune the value of K.
+---
+
+# Example - Train KNN
+
+To train the model we will use 5 fold cross validation. 
+
+
+```r
+diabetes_cv &lt;- rsample::vfold_cv(pima_train, v = 5)
+
+diabetes_wkflw &lt;- workflows::workflow() |&gt;
+  workflows::add_recipe(diabetes_recipe) |&gt;
+  workflows::add_model(diabetes_spec)
+
+diabetes_wkflw
+```
+
+```
+## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: nearest_neighbor()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 2 Recipe Steps
+## 
+## • step_scale()
+## • step_center()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## K-Nearest Neighbor Model Specification (classification)
+## 
+## Main Arguments:
+##   neighbors = parsnip::tune()
+## 
+## Computational engine: kknn
+```
+
+---
+
+# Example - Train KNN
+
+Next, we run cross validation for a grid of neighbours ranging from 1 to 20.
+
+
+```r
+grid_vals &lt;- tibble::tibble(neighbors = seq(from = 1, to = 20, by = 1))
+
+diabetes_results &lt;- diabetes_wkflw |&gt;
+  tune::tune_grid(resamples = diabetes_cv, grid = grid_vals) 
+
+diabetes_results |&gt;
+  tune::collect_metrics() 
+```
+
+```
+## # A tibble: 40 × 7
+##    neighbors .metric  .estimator  mean     n std_err .config              
+##        &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;                
+##  1         1 accuracy binary     0.698     5 0.00808 Preprocessor1_Model01
+##  2         1 roc_auc  binary     0.664     5 0.00772 Preprocessor1_Model01
+##  3         2 accuracy binary     0.698     5 0.00808 Preprocessor1_Model02
+##  4         2 roc_auc  binary     0.724     5 0.0193  Preprocessor1_Model02
+##  5         3 accuracy binary     0.698     5 0.00808 Preprocessor1_Model03
+##  6         3 roc_auc  binary     0.745     5 0.0227  Preprocessor1_Model03
+##  7         4 accuracy binary     0.698     5 0.00808 Preprocessor1_Model04
+##  8         4 roc_auc  binary     0.758     5 0.0204  Preprocessor1_Model04
+##  9         5 accuracy binary     0.721     5 0.00663 Preprocessor1_Model05
+## 10         5 roc_auc  binary     0.764     5 0.0197  Preprocessor1_Model05
+## # … with 30 more rows
+```
+
+
+---
+
+# KNN - Run final model with tunned parameters
+
+We can finish the workflow by using the function `finalize_workflow` alongside the function `select_best` that selects the best parameter combination from the grid search.
+
+
+```r
+(diabetes_wkflw &lt;- diabetes_wkflw |&gt;
+  tune::finalize_workflow(diabetes_results |&gt;
+                            tune::select_best(metric = "roc_auc")))
+```
+
+```
+## ══ Workflow ════════════════════════════════════════════════════════════════════
+## Preprocessor: Recipe
+## Model: nearest_neighbor()
+## 
+## ── Preprocessor ────────────────────────────────────────────────────────────────
+## 2 Recipe Steps
+## 
+## • step_scale()
+## • step_center()
+## 
+## ── Model ───────────────────────────────────────────────────────────────────────
+## K-Nearest Neighbor Model Specification (classification)
+## 
+## Main Arguments:
+##   neighbors = 20
+## 
+## Computational engine: kknn
+```
+
+---
+
+# KNN - Evaluate the model on the test set
+
+So far we have:
+  - Defined our recipe
+  - Defined the model
+  - Tuned the model’s parameters
+  
+Now, we’re ready to fit the final model. All the steps are contained within the `workflow` object, so we can apply the `last_fit()` function to our workflow and our train/test split object. This will automatically train the model specified by the workflow using the training data, and produce evaluations based on the test set.
+
+
+```r
+diabetes_fit &lt;- diabetes_wkflw |&gt;
+  # fit on the training set and evaluate on test set
+  tune::last_fit(pima_split)
+
+diabetes_fit
+```
+
+```
+## # Resampling results
+## # Manual resampling 
+## # A tibble: 1 × 6
+##   splits            id               .metrics .notes   .predictions .workflow 
+##   &lt;list&gt;            &lt;chr&gt;            &lt;list&gt;   &lt;list&gt;   &lt;list&gt;       &lt;list&gt;    
+## 1 &lt;split [537/231]&gt; train/test split &lt;tibble&gt; &lt;tibble&gt; &lt;tibble&gt;     &lt;workflow&gt;
+```
+
+---
+
+# KNN - Seeing the result of our model
+
+To see the performance of the test set, we can use again the function `collect_metrics()`
+
+
+```r
+diabetes_fit |&gt;
+  tune::collect_metrics()
+```
+
+```
+## # A tibble: 2 × 4
+##   .metric  .estimator .estimate .config             
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary         0.779 Preprocessor1_Model1
+## 2 roc_auc  binary         0.825 Preprocessor1_Model1
+```
+
 
 ---
 
